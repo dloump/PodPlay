@@ -19,7 +19,9 @@ import com.raywenderlich.podplay.adapter.PodcastListAdapter
 import com.raywenderlich.podplay.databinding.ActivityPodcastBinding
 import com.raywenderlich.podplay.repository.ItunesRepo
 import com.raywenderlich.podplay.repository.PodcastRepo
+import com.raywenderlich.podplay.service.FeedService
 import com.raywenderlich.podplay.service.ItunesService
+import com.raywenderlich.podplay.service.RssFeedService
 import com.raywenderlich.podplay.viewmodel.PodcastViewModel
 import com.raywenderlich.podplay.viewmodel.SearchViewModel
 import kotlinx.coroutines.Dispatchers
@@ -101,7 +103,7 @@ class PodcastActivity : AppCompatActivity(),
     private fun setupViewModels() {
         val service = ItunesService.instance
         searchViewModel.iTunesRepo = ItunesRepo(service)
-        podcastViewModel.podcastRepo = PodcastRepo()
+        podcastViewModel.podcastRepo = PodcastRepo(RssFeedService.instance)
     }
 
     private fun updateControls() {
@@ -122,23 +124,21 @@ class PodcastActivity : AppCompatActivity(),
 
     override fun onShowDetails(podcastSummaryViewData:
                                SearchViewModel.PodcastSummaryViewData) {
-        //feedUrl is taken from podcastSummaryViewData object if not null,
-        //otherwise, method returns without doing anything
-        val feedUrl = podcastSummaryViewData.feedUrl ?: return
-        //displaying progress bar to show User that app is busy loading podcast data
-        showProgressBar()
-        //loading podcast view data
-        val podcast =
+        podcastSummaryViewData.feedUrl?.let {
+            showProgressBar()
             podcastViewModel.getPodcast(podcastSummaryViewData)
-        //hiding progress bar after data is returned
-        hideProgressBar()
-        if (podcast != null) {
-            //if data is not null, showDetailsFragment() is called to display detail fragment
-            showDetailsFragment()
-        } else {
-            //if data is null, error dialog is displayed
-            showError("Error loading feed $feedUrl")
         }
+    }
+
+    private fun createSubscription() {
+        podcastViewModel.podcastLiveData.observe(this, {
+            hideProgressBar()
+            if (it != null) {
+                showDetailsFragment()
+            } else {
+                showError("Error loading feed")
+            }
+        })
     }
 
     private fun showProgressBar() {

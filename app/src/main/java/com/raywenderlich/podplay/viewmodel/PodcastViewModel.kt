@@ -2,13 +2,21 @@ package com.raywenderlich.podplay.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.raywenderlich.podplay.model.Episode
 import com.raywenderlich.podplay.model.Podcast
 import com.raywenderlich.podplay.repository.PodcastRepo
+import kotlinx.coroutines.launch
 import java.util.*
 
 class PodcastViewModel(application: Application) :
     AndroidViewModel(application) {
+    private val _podcastLiveData = MutableLiveData<PodcastViewData?
+            >()
+    val podcastLiveData: LiveData<PodcastViewData?> =
+        _podcastLiveData
     var podcastRepo: PodcastRepo? = null
     var activePodcastViewData: PodcastViewData? = null
     data class PodcastViewData(
@@ -54,30 +62,20 @@ class PodcastViewModel(application: Application) :
         )
     }
 
-    //takeing a PodcastSummaryViewData object & returning PodcastViewData or null
-    fun getPodcast(podcastSummaryViewData:
-                   SearchViewModel.PodcastSummaryViewData
-    ): PodcastViewData? {
-        //assigning local variables to podcastRepo &
-        //podcastSummaryViewData.feedUrl. If either is null, method returns early
-        val repo = podcastRepo ?: return null
-        val feedUrl = podcastSummaryViewData.feedUrl ?: return null
-        //calling getPodcast() from podcast repo with feed URL
-        val podcast = repo.getPodcast(feedUrl)
-        //checking podcast detail object to make sure it’s not null
-        podcast?.let {
-            //setting podcast title to podcast summary name
-            it.feedTitle = podcastSummaryViewData.name ?: ""
-            //setting podcast detail image to match podcast summary image URL if it’s not null
-            it.imageUrl = podcastSummaryViewData.imageUrl ?: ""
-            //converting Podcast object to a PodcastViewData object & assigning it to
-            //activePodcastViewData
-            activePodcastViewData = podcastToPodcastView(it)
-            //returning podcast view data
-            return activePodcastViewData
+    fun getPodcast(podcastSummaryViewData: SearchViewModel.PodcastSummaryViewData) {
+        podcastSummaryViewData.feedUrl?.let { url ->
+            viewModelScope.launch {
+                podcastRepo?.getPodcast(url)?.let {
+                    it.feedTitle = podcastSummaryViewData.name ?: ""
+                    it.imageUrl = podcastSummaryViewData.imageUrl ?: ""
+                    _podcastLiveData.value = podcastToPodcastView(it)
+                } ?: run {
+                    _podcastLiveData.value = null
+                }
+            }
+        } ?: run {
+            _podcastLiveData.value = null
         }
-        //returning null if no podcast is retrieved
-        return null
     }
 
 }
