@@ -46,10 +46,10 @@ class PodcastDetailsFragment : Fragment() {
 
                         Glide.with(activity).load(viewData.imageUrl).into(binding.feedImageView)
                     }
-                    // 1
+                    //allowing feed title to scroll if it gets too long for its container
                     binding.feedDescTextView.movementMethod =
                         ScrollingMovementMethod()
-                    // 2
+                    //setup code for episode list RecyclerView
                     binding.episodeRecyclerView.setHasFixedSize(true)
                     val layoutManager = LinearLayoutManager(activity)
                     binding.episodeRecyclerView.layoutManager =
@@ -59,7 +59,8 @@ class PodcastDetailsFragment : Fragment() {
                         layoutManager.orientation)
 
                     binding.episodeRecyclerView.addItemDecoration(dividerItemDecoration)
-                    // 3
+                    //creating EpisodelistAdapter with list of episodes in
+                    //activePodcastViewData & assigning it to episodeRecyclerView
                     episodeListAdapter =
                         EpisodeListAdapter(viewData.episodes)
                     binding.episodeRecyclerView.adapter =
