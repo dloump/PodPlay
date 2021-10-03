@@ -57,10 +57,10 @@ class PodcastActivity : AppCompatActivity(),
         setupToolbar()
         handleIntent(intent)
         addBackStackListener()
+        createSubscription()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        //
         //inflating options menu
         val inflater = menuInflater
         inflater.inflate(R.menu.menu_search, menu)
